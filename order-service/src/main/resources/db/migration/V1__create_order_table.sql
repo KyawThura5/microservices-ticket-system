@@ -1,0 +1,9 @@
+CREATE TABLE `orders` (
+    id BIGINT AUTO_INCREMENT NOT NULL,
+    total DECIMAL(10, 2) NOT NULL,
+    quantity BIGINT NOT NULL,
+    placed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    customer_id BIGINT NOT NULL,
+    event_id BIGINT NOT NULL,
+    CONSTRAINT pk_order PRIMARY KEY (id)
+);
