@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.order_service.client.EventClient;
+import com.order_service.constant.OrderStatus;
 import com.order_service.dto.EventResponseDto;
 import com.order_service.dto.OrderPlacedEvent;
 import com.order_service.dto.OrderRequestDto;
@@ -36,21 +37,21 @@ public class OrderServiceImpl implements OrderService {
 	@Transactional // Ensures order is saved before Kafka message is considered part of the flow
 	public OrderResponseDto placeOrder(OrderRequestDto orderDto) {
 
-		EventResponseDto eventDetails = eventClient.getEventById(orderDto.getEventId());
-
 		Order order = orderMapper.mapToOrder(orderDto);
 		order.setPlacedAt(LocalDateTime.now());
+		order.setStatus(OrderStatus.PENDING);
+
+		EventResponseDto eventDetails = eventClient.getEventById(orderDto.getEventId());
 
 		BigDecimal total = eventDetails.getTicketPrice().multiply(BigDecimal.valueOf(order.getQuantity()));
 		order.setTotal(total);
 
 		Order savedOrder = orderRepository.save(order);
 
-		OrderPlacedEvent event = new OrderPlacedEvent();
-		event.setEventId(savedOrder.getEventId());
-		event.setQuantity(savedOrder.getQuantity());
+		OrderPlacedEvent event = new OrderPlacedEvent(savedOrder.getId(), savedOrder.getEventId(),
+				savedOrder.getQuantity());
 
-		log.info("Sending OrderPlacedEvent to Kafka for Event ID: {}", event.getEventId());
+		log.info("Order created as PENDING. Sending to Kafka: {}", event);
 		kafkaTemplate.send("order-placed", event);
 
 		return orderMapper.mapToResponseDto(savedOrder);

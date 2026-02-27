@@ -7,8 +7,6 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class OrderPlacedEvent {
+public class OrderConfirmedEvent {
 	private Long orderId;
-	private Long eventId;
-	private Long quantity;
 }

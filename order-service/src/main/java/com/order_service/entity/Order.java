@@ -3,8 +3,12 @@ package com.order_service.entity;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import com.order_service.constant.OrderStatus;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -37,4 +41,7 @@ public class Order {
 
 	@Column(name = "event_id")
 	private Long eventId;
+
+	@Enumerated(EnumType.STRING)
+	private OrderStatus status; // PENDING, CONFIRMED, REJECTED
 }

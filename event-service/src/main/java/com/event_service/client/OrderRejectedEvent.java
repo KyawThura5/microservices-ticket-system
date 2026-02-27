@@ -1,4 +1,4 @@
-package com.order_service.dto;
+package com.event_service.client;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -7,8 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class OrderPlacedEvent {
+public class OrderRejectedEvent {
 	private Long orderId;
-	private Long eventId;
-	private Long quantity;
+	private String reason;
 }

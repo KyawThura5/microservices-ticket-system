@@ -1,4 +1,4 @@
-package com.order_service.dto;
+package com.event_service.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
