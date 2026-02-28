@@ -63,6 +63,7 @@ public class EventServiceImpl implements EventService {
 		existingEvent.setName(eventRequestDto.getName());
 		existingEvent.setVenueId(eventRequestDto.getVenueId());
 		existingEvent.setTotalCapacity(eventRequestDto.getTotalCapacity());
+		existingEvent.setLeftCapacity(eventRequestDto.getTotalCapacity());
 		existingEvent.setTicketPrice(eventRequestDto.getTicketPrice());
 
 		Event updatedEvent = eventRepository.save(existingEvent);
