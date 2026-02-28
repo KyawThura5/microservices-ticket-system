@@ -27,6 +27,8 @@ public class OrderMapper {
 		response.setPlacedAt(order.getPlacedAt());
 		response.setCustomerId(order.getCustomerId());
 		response.setEventId(order.getEventId());
+		response.setOrderStatus(order.getStatus());
+		response.setFailureReason(order.getFailureReason());
 		return response;
 	}
 }

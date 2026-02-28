@@ -43,5 +43,7 @@ public class Order {
 	private Long eventId;
 
 	@Enumerated(EnumType.STRING)
-	private OrderStatus status; // PENDING, CONFIRMED, REJECTED
+	private OrderStatus status;
+
+	private String failureReason;
 }

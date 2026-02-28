@@ -22,19 +22,26 @@ public class OrderSagaConsumer {
 	@KafkaListener(topics = "order-confirmed", groupId = "order-group")
 	public void handleConfirmation(OrderConfirmedEvent event) {
 		log.info("Confirming Order ID: {}", event.getOrderId());
-		updateOrderStatus(event.getOrderId(), OrderStatus.CONFIRMED);
+		updateOrderStatus(event.getOrderId(), OrderStatus.CONFIRMED, null);
 	}
 
 	@KafkaListener(topics = "order-rejected", groupId = "order-group")
 	public void handleRejection(OrderRejectedEvent event) {
 		log.info("Rejecting Order ID: {} due to: {}", event.getOrderId(), event.getReason());
-		updateOrderStatus(event.getOrderId(), OrderStatus.REJECTED);
+		updateOrderStatus(event.getOrderId(), OrderStatus.REJECTED, event.getReason());
 	}
 
-	private void updateOrderStatus(Long orderId, OrderStatus status) {
+	private void updateOrderStatus(Long orderId, OrderStatus status, String reason) {
 		Order order = orderRepository.findById(orderId)
 				.orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+		if (order.getStatus() == status) {
+			log.info("Order {} is already in status {}", orderId, status);
+			return;
+		}
 		order.setStatus(status);
+		if (reason != null && !reason.isBlank()) {
+			order.setFailureReason(reason);
+		}
 		orderRepository.save(order);
 	}
 }

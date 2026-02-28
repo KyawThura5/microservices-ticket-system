@@ -80,7 +80,7 @@ public class EventServiceImpl implements EventService {
 		Event event = eventRepository.findById(eventId).orElseThrow(() -> new RuntimeException("Event not found"));
 
 		if (event.getLeftCapacity() < quantity) {
-			throw new RuntimeException("Not enough tickets available!");
+			throw new RuntimeException("Sorry, only " + event.getLeftCapacity() + " tickets remaining.");
 		}
 
 		long newCapacity = event.getLeftCapacity() - quantity;
