@@ -1,29 +1,139 @@
 services:
-  kafka:
+  # --- SERVICE DISCOVERY ---
+  eureka-server:
+    build: ./eureka-server
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 10s
+      retries: 5
+      start_period: 10s
+
+  # --- API GATEWAY ---
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "8030:8030"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+
+  # --- MESSAGE BROKER (KAFKA) ---
+  kafka-broker:
     image: apache/kafka:latest
     container_name: kafka-broker
-    ports:
-      - "9092:9092"
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-broker:9092
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
-      # FIXED THIS LINE: Changed @localhost:9093 to @kafka-broker:9093
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-broker:9093
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka-ui
     depends_on:
-      - kafka
+      - kafka-broker
     ports:
-      - "8080:8080"
+      - "8090:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-broker:9092
+
+  # --- DATABASES (One per service) ---
+  customer-db:
+    image: mysql:8.0
+    container_name: customer-db
+    environment:
+      MYSQL_DATABASE: customer_db
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3307:3306"
+
+  venue-db:
+    image: mysql:8.0
+    container_name: venue-db
+    environment:
+      MYSQL_DATABASE: venue_db
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3308:3306"
+
+  event-db:
+    image: mysql:8.0
+    container_name: event-db
+    environment:
+      MYSQL_DATABASE: event_db
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3309:3306"
+
+  order-db:
+    image: mysql:8.0
+    container_name: order-db
+    environment:
+      MYSQL_DATABASE: order_db
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3310:3306"
+
+  # --- MICROSERVICES ---
+  customer-service:
+    build: ./customer-service
+    container_name: customer-service
+    depends_on:
+      - eureka-server
+      - customer-db
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://customer-db:3306/customer_db?createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+
+  venue-service:
+    build: ./venue-service
+    container_name: venue-service
+    depends_on:
+      - eureka-server
+      - venue-db
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://venue-db:3306/venue_db?createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+
+  event-service:
+    build: ./event-service
+    container_name: event-service
+    depends_on:
+      - eureka-server
+      - event-db
+      - kafka-broker
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://event-db:3306/event_db?createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka-broker:9092
+
+  order-service:
+    build: ./order-service
+    container_name: order-service
+    depends_on:
+      - eureka-server
+      - order-db
+      - kafka-broker
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://order-db:3306/order_db?createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka-broker:9092
