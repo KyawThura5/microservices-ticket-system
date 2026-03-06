@@ -5,6 +5,8 @@ services:
     container_name: eureka-server
     ports:
       - "8761:8761"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
       interval: 10s
@@ -21,6 +23,7 @@ services:
       eureka-server:
         condition: service_healthy
     environment:
+      - SPRING_PROFILES_ACTIVE=docker
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
 
   # --- MESSAGE BROKER (KAFKA) ---
@@ -36,6 +39,12 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-broker:9093
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 9092 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
@@ -48,7 +57,7 @@ services:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-broker:9092
 
-  # --- DATABASES (One per service) ---
+  # --- DATABASES ---
   customer-db:
     image: mysql:8.0
     container_name: customer-db
@@ -57,6 +66,11 @@ services:
       MYSQL_ROOT_PASSWORD: root
     ports:
       - "3307:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   venue-db:
     image: mysql:8.0
@@ -66,6 +80,11 @@ services:
       MYSQL_ROOT_PASSWORD: root
     ports:
       - "3308:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   event-db:
     image: mysql:8.0
@@ -75,6 +94,11 @@ services:
       MYSQL_ROOT_PASSWORD: root
     ports:
       - "3309:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   order-db:
     image: mysql:8.0
@@ -84,56 +108,57 @@ services:
       MYSQL_ROOT_PASSWORD: root
     ports:
       - "3310:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   # --- MICROSERVICES ---
   customer-service:
     build: ./customer-service
     container_name: customer-service
     depends_on:
-      - eureka-server
-      - customer-db
+      eureka-server:
+        condition: service_healthy
+      customer-db:
+        condition: service_healthy
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://customer-db:3306/customer_db?createDatabaseIfNotExist=true
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=root
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_PROFILES_ACTIVE=docker
 
   venue-service:
     build: ./venue-service
     container_name: venue-service
     depends_on:
-      - eureka-server
-      - venue-db
+      eureka-server:
+        condition: service_healthy
+      venue-db:
+        condition: service_healthy
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://venue-db:3306/venue_db?createDatabaseIfNotExist=true
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=root
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_PROFILES_ACTIVE=docker
 
   event-service:
     build: ./event-service
     container_name: event-service
     depends_on:
-      - eureka-server
-      - event-db
-      - kafka-broker
+      eureka-server:
+        condition: service_healthy
+      event-db:
+        condition: service_healthy
+      kafka-broker:
+        condition: service_healthy
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://event-db:3306/event_db?createDatabaseIfNotExist=true
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=root
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka-broker:9092
+      - SPRING_PROFILES_ACTIVE=docker
 
   order-service:
     build: ./order-service
     container_name: order-service
     depends_on:
-      - eureka-server
-      - order-db
-      - kafka-broker
+      eureka-server:
+        condition: service_healthy
+      order-db:
+        condition: service_healthy
+      kafka-broker:
+        condition: service_healthy
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://order-db:3306/order_db?createDatabaseIfNotExist=true
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=root
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka-broker:9092
+      - SPRING_PROFILES_ACTIVE=docker
