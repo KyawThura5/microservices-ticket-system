@@ -1,0 +1,86 @@
+server:
+  port: 8030
+
+spring:
+  application:
+    name: api-gateway
+
+  cloud:
+    gateway:
+      globalcors:
+        add-to-simple-url-handler-mapping: true
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+
+      routes:
+
+        # -------- PHYSICAL ROUTES --------
+        - id: order-service
+          uri: lb://ORDER-SERVICE
+          predicates:
+            - Path=/api/orders/**
+
+        - id: event-service
+          uri: lb://EVENT-SERVICE
+          predicates:
+            - Path=/api/events/**
+
+        - id: customer-service
+          uri: lb://CUSTOMER-SERVICE
+          predicates:
+            - Path=/api/customers/**
+
+        - id: venue-service
+          uri: lb://VENUE-SERVICE
+          predicates:
+            - Path=/api/venues/**
+
+        # -------- SWAGGER DOC ROUTES --------
+        - id: venue-docs
+          uri: lb://VENUE-SERVICE
+          predicates:
+            - Path=/venue-service/v3/api-docs
+          filters:
+            - RewritePath=/venue-service/(?<path>.*), /$\{path}
+
+        - id: order-docs
+          uri: lb://ORDER-SERVICE
+          predicates:
+            - Path=/order-service/v3/api-docs
+          filters:
+            - RewritePath=/order-service/(?<path>.*), /$\{path}
+
+        - id: event-docs
+          uri: lb://EVENT-SERVICE
+          predicates:
+            - Path=/event-service/v3/api-docs
+          filters:
+            - RewritePath=/event-service/(?<path>.*), /$\{path}
+
+        - id: customer-docs
+          uri: lb://CUSTOMER-SERVICE
+          predicates:
+            - Path=/customer-service/v3/api-docs
+          filters:
+            - RewritePath=/customer-service/(?<path>.*), /$\{path}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: Venue Service
+        url: /venue-service/v3/api-docs
+      - name: Order Service
+        url: /order-service/v3/api-docs
+      - name: Event Service
+        url: /event-service/v3/api-docs
+      - name: Customer Service
+        url: /customer-service/v3/api-docs
