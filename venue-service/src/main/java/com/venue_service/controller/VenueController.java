@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.venue_service.dto.VenueDto;
 import com.venue_service.service.VenueService;
 
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 
 @RestController
@@ -27,7 +28,7 @@ public class VenueController {
 
 	// Create Venue REST API
 	@PostMapping
-	public ResponseEntity<VenueDto> createVenue(@RequestBody VenueDto venueDto) {
+	public ResponseEntity<VenueDto> createVenue(@Valid @RequestBody VenueDto venueDto) {
 		VenueDto savedVenue = venueService.createVenue(venueDto);
 		return new ResponseEntity<>(savedVenue, HttpStatus.CREATED);
 	}
@@ -48,7 +49,8 @@ public class VenueController {
 
 	// Update Venue REST API
 	@PutMapping("{id}")
-	public ResponseEntity<VenueDto> updateVenue(@PathVariable("id") Long venueId, @RequestBody VenueDto updatedVenue) {
+	public ResponseEntity<VenueDto> updateVenue(@PathVariable("id") Long venueId,
+			@Valid @RequestBody VenueDto updatedVenue) {
 		VenueDto venueDto = venueService.updateVenue(venueId, updatedVenue);
 		return ResponseEntity.ok(venueDto);
 	}

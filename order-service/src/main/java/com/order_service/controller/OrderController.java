@@ -15,6 +15,7 @@ import com.order_service.dto.OrderRequestDto;
 import com.order_service.dto.OrderResponseDto;
 import com.order_service.service.OrderService;
 
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -33,7 +34,7 @@ public class OrderController {
 	@ApiResponses(value = { @ApiResponse(responseCode = "201", description = "Order created successfully"),
 			@ApiResponse(responseCode = "400", description = "Invalid input or sold out") })
 	@PostMapping
-	public ResponseEntity<OrderResponseDto> placeOrder(@RequestBody OrderRequestDto orderRequestDto) {
+	public ResponseEntity<OrderResponseDto> placeOrder(@Valid @RequestBody OrderRequestDto orderRequestDto) {
 		OrderResponseDto savedOrder = orderService.placeOrder(orderRequestDto);
 		return new ResponseEntity<>(savedOrder, HttpStatus.CREATED);
 	}

@@ -1,4 +1,4 @@
-package com.customer_service.exception;
+package com.event_service.exception;
 
 import java.time.OffsetDateTime;
 import java.util.stream.Collectors;
@@ -18,8 +18,7 @@ import jakarta.validation.ConstraintViolationException;
 public class GlobalExceptionHandler {
 
 	@ExceptionHandler(ResourceNotFoundException.class)
-	public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException ex,
-			HttpServletRequest request) {
+	public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException ex, HttpServletRequest request) {
 		return buildError(HttpStatus.NOT_FOUND, ex.getMessage(), request.getRequestURI());
 	}
 
@@ -50,7 +49,7 @@ public class GlobalExceptionHandler {
 	}
 
 	@ExceptionHandler(Exception.class)
-	public ResponseEntity<ErrorResponse> handleGenericException(Exception ex, HttpServletRequest request) {
+	public ResponseEntity<ErrorResponse> handleGeneric(Exception ex, HttpServletRequest request) {
 		return buildError(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error", request.getRequestURI());
 	}
 

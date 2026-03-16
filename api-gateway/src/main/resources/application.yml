@@ -1,9 +1,12 @@
 server:
   port: 8030
+  shutdown: graceful
 
 spring:
   application:
     name: api-gateway
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
 
   cloud:
     gateway:
@@ -70,7 +73,7 @@ spring:
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}
 
 springdoc:
   swagger-ui:
@@ -84,3 +87,19 @@ springdoc:
         url: /event-service/v3/api-docs
       - name: Customer Service
         url: /customer-service/v3/api-docs
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+  health:
+    readinessstate:
+      enabled: true
+    livenessstate:
+      enabled: true

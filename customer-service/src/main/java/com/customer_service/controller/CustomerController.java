@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.customer_service.dto.CustomerDTO;
 import com.customer_service.service.CustomerService;
 
+import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/api/customers")
 public class CustomerController {
@@ -28,7 +29,7 @@ public class CustomerController {
 
 	// Create a new customer
 	@PostMapping
-	public ResponseEntity<CustomerDTO> createCustomer(@RequestBody CustomerDTO customerDTO) {
+	public ResponseEntity<CustomerDTO> createCustomer(@Valid @RequestBody CustomerDTO customerDTO) {
 		CustomerDTO createdCustomer = customerService.createCustomer(customerDTO);
 		return new ResponseEntity<>(createdCustomer, HttpStatus.CREATED);
 	}
@@ -49,7 +50,8 @@ public class CustomerController {
 
 	// Update customer by ID
 	@PutMapping("/{id}")
-	public ResponseEntity<CustomerDTO> updateCustomer(@PathVariable Long id, @RequestBody CustomerDTO customerDTO) {
+	public ResponseEntity<CustomerDTO> updateCustomer(@PathVariable Long id,
+			@Valid @RequestBody CustomerDTO customerDTO) {
 		CustomerDTO updatedCustomer = customerService.updateCustomer(id, customerDTO);
 		return ResponseEntity.ok(updatedCustomer);
 	}

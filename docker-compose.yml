@@ -5,8 +5,6 @@ services:
     container_name: eureka-server
     ports:
       - "18761:8761"
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
       interval: 10s
@@ -23,8 +21,7 @@ services:
       eureka-server:
         condition: service_healthy
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
 
   # --- MESSAGE BROKER (KAFKA) ---
   kafka-broker:
@@ -127,7 +124,12 @@ services:
       customer-db:
         condition: service_healthy
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+      - DB_HOST=customer-db
+      - DB_PORT=3306
+      - DB_NAME=customer_db
+      - DB_USER=root
+      - DB_PASSWORD=root
 
   venue-service:
     build: ./venue-service
@@ -138,7 +140,12 @@ services:
       venue-db:
         condition: service_healthy
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+      - DB_HOST=venue-db
+      - DB_PORT=3306
+      - DB_NAME=venue_db
+      - DB_USER=root
+      - DB_PASSWORD=root
 
   event-service:
     build: ./event-service
@@ -151,7 +158,15 @@ services:
       kafka-broker:
         condition: service_healthy
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+      - DB_HOST=event-db
+      - DB_PORT=3306
+      - DB_NAME=event_db
+      - DB_USER=root
+      - DB_PASSWORD=root
+      - KAFKA_BOOTSTRAP_SERVERS=kafka-broker:9092
+      - KAFKA_EVENT_GROUP_ID=event-group-docker
+      - KAFKA_TOPIC_PREFIX=docker.
 
   order-service:
     build: ./order-service
@@ -164,4 +179,12 @@ services:
       kafka-broker:
         condition: service_healthy
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+      - DB_HOST=order-db
+      - DB_PORT=3306
+      - DB_NAME=order_db
+      - DB_USER=root
+      - DB_PASSWORD=root
+      - KAFKA_BOOTSTRAP_SERVERS=kafka-broker:9092
+      - KAFKA_ORDER_GROUP_ID=order-group-docker
+      - KAFKA_TOPIC_PREFIX=docker.

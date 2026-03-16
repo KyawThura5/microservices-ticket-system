@@ -17,6 +17,7 @@ import com.event_service.dto.EventRequestDto;
 import com.event_service.dto.EventResponseDto;
 import com.event_service.service.EventService;
 
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 
 @RestController
@@ -27,7 +28,7 @@ public class EventController {
 	private final EventService eventService;
 
 	@PostMapping
-	public ResponseEntity<EventResponseDto> createEvent(@RequestBody EventRequestDto eventRequestDto) {
+	public ResponseEntity<EventResponseDto> createEvent(@Valid @RequestBody EventRequestDto eventRequestDto) {
 		return new ResponseEntity<>(eventService.createEvent(eventRequestDto), HttpStatus.CREATED);
 	}
 
@@ -44,7 +45,7 @@ public class EventController {
 	// Update Event REST API
 	@PutMapping("/{id}")
 	public ResponseEntity<EventResponseDto> updateEvent(@PathVariable Long id,
-			@RequestBody EventRequestDto eventRequestDto) {
+			@Valid @RequestBody EventRequestDto eventRequestDto) {
 		EventResponseDto updatedEvent = eventService.updateEvent(id, eventRequestDto);
 		return ResponseEntity.ok(updatedEvent);
 	}

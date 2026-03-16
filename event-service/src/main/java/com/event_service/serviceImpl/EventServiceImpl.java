@@ -11,6 +11,7 @@ import com.event_service.dto.EventRequestDto;
 import com.event_service.dto.EventResponseDto;
 import com.event_service.dto.VenueDto;
 import com.event_service.entity.Event;
+import com.event_service.exception.ResourceNotFoundException;
 import com.event_service.mapper.EventMapper;
 import com.event_service.repository.EventRepository;
 import com.event_service.service.EventService;
@@ -43,7 +44,7 @@ public class EventServiceImpl implements EventService {
 	@Override
 	public EventResponseDto getEventById(Long id) {
 		Event event = eventRepository.findById(id)
-				.orElseThrow(() -> new RuntimeException("Event not found with id: " + id));
+				.orElseThrow(() -> new ResourceNotFoundException("Event not found with id: " + id));
 		return eventMapper.mapToEventResponseDto(event);
 	}
 
@@ -54,7 +55,8 @@ public class EventServiceImpl implements EventService {
 
 	@Override
 	public EventResponseDto updateEvent(Long id, EventRequestDto eventRequestDto) {
-		Event existingEvent = eventRepository.findById(id).orElseThrow(() -> new RuntimeException("Event not found"));
+		Event existingEvent = eventRepository.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("Event not found with id: " + id));
 
 		if (!existingEvent.getVenueId().equals(eventRequestDto.getVenueId())) {
 			venueClient.getVenueById(eventRequestDto.getVenueId());
@@ -72,13 +74,17 @@ public class EventServiceImpl implements EventService {
 
 	@Override
 	public void deleteEvent(Long id) {
+		if (!eventRepository.existsById(id)) {
+			throw new ResourceNotFoundException("Event not found with id: " + id);
+		}
 		eventRepository.deleteById(id);
 	}
 
 	@Override
 	@Transactional
 	public void reduceCapacity(Long eventId, Long quantity) {
-		Event event = eventRepository.findById(eventId).orElseThrow(() -> new RuntimeException("Event not found"));
+		Event event = eventRepository.findById(eventId)
+				.orElseThrow(() -> new ResourceNotFoundException("Event not found with id: " + eventId));
 
 		if (event.getLeftCapacity() < quantity) {
 			throw new RuntimeException("Sorry, only " + event.getLeftCapacity() + " tickets remaining.");

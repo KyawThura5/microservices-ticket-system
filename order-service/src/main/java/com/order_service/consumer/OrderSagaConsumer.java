@@ -7,6 +7,7 @@ import com.order_service.client.OrderRejectedEvent;
 import com.order_service.constant.OrderStatus;
 import com.order_service.dto.OrderConfirmedEvent;
 import com.order_service.entity.Order;
+import com.order_service.exception.ResourceNotFoundException;
 import com.order_service.repository.OrderRepository;
 
 import lombok.AllArgsConstructor;
@@ -19,13 +20,13 @@ public class OrderSagaConsumer {
 
 	private final OrderRepository orderRepository;
 
-	@KafkaListener(topics = "order-confirmed", groupId = "order-group")
+	@KafkaListener(topics = "${kafka.topic.order-confirmed}", groupId = "${KAFKA_ORDER_GROUP_ID:order-group}")
 	public void handleConfirmation(OrderConfirmedEvent event) {
 		log.info("Confirming Order ID: {}", event.getOrderId());
 		updateOrderStatus(event.getOrderId(), OrderStatus.CONFIRMED, null);
 	}
 
-	@KafkaListener(topics = "order-rejected", groupId = "order-group")
+	@KafkaListener(topics = "${kafka.topic.order-rejected}", groupId = "${KAFKA_ORDER_GROUP_ID:order-group}")
 	public void handleRejection(OrderRejectedEvent event) {
 		log.info("Rejecting Order ID: {} due to: {}", event.getOrderId(), event.getReason());
 		updateOrderStatus(event.getOrderId(), OrderStatus.REJECTED, event.getReason());
@@ -33,7 +34,7 @@ public class OrderSagaConsumer {
 
 	private void updateOrderStatus(Long orderId, OrderStatus status, String reason) {
 		Order order = orderRepository.findById(orderId)
-				.orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+				.orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
 		if (order.getStatus() == status) {
 			log.info("Order {} is already in status {}", orderId, status);
 			return;
