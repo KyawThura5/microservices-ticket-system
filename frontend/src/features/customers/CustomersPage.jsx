@@ -1,5 +1,5 @@
-import Pagination from "../components/Pagination";
-import { paginate, clampPage } from "../utils/pagination";
+import Pagination from "../../components/Pagination";
+import { paginate, clampPage } from "../../utils/pagination";
 
 export default function Customers({ customers, loading, error, onAdd, onEdit, onDelete, page, pageSize, onPageChange }) {
   const currentPage = clampPage(page, customers.length, pageSize);

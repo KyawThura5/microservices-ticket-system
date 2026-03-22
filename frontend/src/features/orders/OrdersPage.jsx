@@ -1,8 +1,19 @@
-import Pagination from "../components/Pagination";
-import { paginate, clampPage } from "../utils/pagination";
-import { formatMoney } from "../utils/format";
+import Pagination from "../../components/Pagination";
+import { paginate, clampPage } from "../../utils/pagination";
+import { formatMoney } from "../../utils/format";
 
-export default function Orders({ orders, loading, error, onAdd, onRefresh, page, pageSize, onPageChange }) {
+export default function Orders({
+  orders,
+  loading,
+  error,
+  onAdd,
+  onRefresh,
+  customersById,
+  eventsById,
+  page,
+  pageSize,
+  onPageChange,
+}) {
   const currentPage = clampPage(page, orders.length, pageSize);
   const pageItems = paginate(orders, currentPage, pageSize);
 
@@ -41,8 +52,8 @@ export default function Orders({ orders, loading, error, onAdd, onRefresh, page,
               {pageItems.map((order) => (
                 <div key={order.id} className="table__row">
                   <span>#{order.id}</span>
-                  <span>#{order.customerId}</span>
-                  <span>#{order.eventId}</span>
+                  <span>{customersById?.get(order.customerId)?.name || `#${order.customerId}`}</span>
+                  <span>{eventsById?.get(order.eventId)?.name || `#${order.eventId}`}</span>
                   <span>{order.quantity}</span>
                   <span className={`status status--${order.orderStatus?.toLowerCase()}`}>
                     {order.orderStatus}

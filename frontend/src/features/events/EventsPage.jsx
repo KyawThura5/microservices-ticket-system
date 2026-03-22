@@ -1,6 +1,6 @@
-import Pagination from "../components/Pagination";
-import { paginate, clampPage } from "../utils/pagination";
-import { formatMoney } from "../utils/format";
+import Pagination from "../../components/Pagination";
+import { paginate, clampPage } from "../../utils/pagination";
+import { formatMoney } from "../../utils/format";
 
 export default function Events({ events, venuesById, loading, error, onAdd, onEdit, onDelete, page, pageSize, onPageChange }) {
   const currentPage = clampPage(page, events.length, pageSize);
