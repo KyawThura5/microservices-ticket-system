@@ -1,4 +1,4 @@
-package com.venue_service.utils;
+package com.venue_service.exception;
 
 import java.time.OffsetDateTime;
 

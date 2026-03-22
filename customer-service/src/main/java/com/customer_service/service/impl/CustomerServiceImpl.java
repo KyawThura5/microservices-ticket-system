@@ -1,13 +1,13 @@
-package com.customer_service.serviceImpl;
+package com.customer_service.service.impl;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.apache.kafka.common.errors.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
 import com.customer_service.dto.CustomerDTO;
 import com.customer_service.entity.Customer;
+import com.customer_service.exception.ResourceNotFoundException;
 import com.customer_service.mapper.CustomerMapper;
 import com.customer_service.repository.CustomerRepository;
 import com.customer_service.service.CustomerService;
@@ -27,13 +27,7 @@ public class CustomerServiceImpl implements CustomerService {
 	@Override
 	public CustomerDTO createCustomer(CustomerDTO customerDTO) {
 
-		if (!CustomerUtils.isValidEmail(customerDTO.getEmail())) {
-			throw new IllegalArgumentException("Invalid email format");
-		}
-
-		if (!CustomerUtils.isValidPhoneNumber(customerDTO.getPhoneNumber())) {
-			throw new IllegalArgumentException("Invalid phone number format");
-		}
+		validateCustomer(customerDTO);
 		Customer customer = customerMapper.toEntity(customerDTO);
 		Customer savedCustomer = customerRepository.save(customer);
 		return customerMapper.toDTO(savedCustomer);
@@ -56,13 +50,7 @@ public class CustomerServiceImpl implements CustomerService {
 		Customer existingCustomer = customerRepository.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + id));
 
-		if (!CustomerUtils.isValidEmail(customerDTO.getEmail())) {
-			throw new IllegalArgumentException("Invalid email format");
-		}
-
-		if (!CustomerUtils.isValidPhoneNumber(customerDTO.getPhoneNumber())) {
-			throw new IllegalArgumentException("Invalid phone number format");
-		}
+		validateCustomer(customerDTO);
 		existingCustomer.setName(customerDTO.getName());
 		existingCustomer.setEmail(customerDTO.getEmail());
 		existingCustomer.setAddress(customerDTO.getAddress());
@@ -77,5 +65,15 @@ public class CustomerServiceImpl implements CustomerService {
 		Customer existingCustomer = customerRepository.findById(id)
 				.orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + id));
 		customerRepository.delete(existingCustomer);
+	}
+
+	private void validateCustomer(CustomerDTO customerDTO) {
+		if (!CustomerUtils.isValidEmail(customerDTO.getEmail())) {
+			throw new IllegalArgumentException("Invalid email format");
+		}
+
+		if (!CustomerUtils.isValidPhoneNumber(customerDTO.getPhoneNumber())) {
+			throw new IllegalArgumentException("Invalid phone number format");
+		}
 	}
 }

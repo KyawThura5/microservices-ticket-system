@@ -1,4 +1,4 @@
-package com.venue_service.serviceImpl;
+package com.venue_service.service.impl;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import com.venue_service.dto.VenueDto;
 import com.venue_service.entity.Venue;
+import com.venue_service.exception.ResourceNotFoundException;
 import com.venue_service.mapper.VenueMapper;
 import com.venue_service.repository.VenueRepository;
 import com.venue_service.service.VenueService;
@@ -29,7 +30,7 @@ public class VenueServiceImpl implements VenueService {
 	@Override
 	public VenueDto getVenueById(Long id) {
 		Venue venue = venueRepository.findById(id)
-				.orElseThrow(() -> new RuntimeException("Venue not found with id: " + id));
+				.orElseThrow(() -> new ResourceNotFoundException("Venue not found with id: " + id));
 		return VenueMapper.mapToVenueDto(venue);
 	}
 
@@ -41,7 +42,7 @@ public class VenueServiceImpl implements VenueService {
 	@Override
 	public VenueDto updateVenue(Long id, VenueDto updatedVenueDto) {
 		Venue venue = venueRepository.findById(id)
-				.orElseThrow(() -> new RuntimeException("Venue not found with id: " + id));
+				.orElseThrow(() -> new ResourceNotFoundException("Venue not found with id: " + id));
 
 		venue.setName(updatedVenueDto.getName());
 		venue.setAddress(updatedVenueDto.getAddress());
@@ -54,7 +55,7 @@ public class VenueServiceImpl implements VenueService {
 	@Override
 	public void deleteVenue(Long id) {
 		if (!venueRepository.existsById(id)) {
-			throw new RuntimeException("Venue not found with id: " + id);
+			throw new ResourceNotFoundException("Venue not found with id: " + id);
 		}
 		venueRepository.deleteById(id);
 	}

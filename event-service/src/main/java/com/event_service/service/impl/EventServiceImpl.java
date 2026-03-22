@@ -1,4 +1,4 @@
-package com.event_service.serviceImpl;
+package com.event_service.service.impl;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.event_service.client.VenueClient;
 import com.event_service.dto.EventRequestDto;
 import com.event_service.dto.EventResponseDto;
-import com.event_service.dto.VenueDto;
 import com.event_service.entity.Event;
 import com.event_service.exception.ResourceNotFoundException;
 import com.event_service.mapper.EventMapper;
@@ -31,7 +30,7 @@ public class EventServiceImpl implements EventService {
 	@Override
 	public EventResponseDto createEvent(EventRequestDto eventRequestDto) {
 
-		VenueDto venue = venueClient.getVenueById(eventRequestDto.getVenueId());
+		venueClient.getVenueById(eventRequestDto.getVenueId());
 
 		Event event = eventMapper.mapToEvent(eventRequestDto);
 
@@ -62,10 +61,16 @@ public class EventServiceImpl implements EventService {
 			venueClient.getVenueById(eventRequestDto.getVenueId());
 		}
 
+		long sold = existingEvent.getTotalCapacity() - existingEvent.getLeftCapacity();
+		long newTotalCapacity = eventRequestDto.getTotalCapacity();
+		if (newTotalCapacity < sold) {
+			throw new IllegalArgumentException("Total capacity cannot be less than already sold tickets (" + sold + ")");
+		}
+
 		existingEvent.setName(eventRequestDto.getName());
 		existingEvent.setVenueId(eventRequestDto.getVenueId());
-		existingEvent.setTotalCapacity(eventRequestDto.getTotalCapacity());
-		existingEvent.setLeftCapacity(eventRequestDto.getTotalCapacity());
+		existingEvent.setTotalCapacity(newTotalCapacity);
+		existingEvent.setLeftCapacity(newTotalCapacity - sold);
 		existingEvent.setTicketPrice(eventRequestDto.getTicketPrice());
 
 		Event updatedEvent = eventRepository.save(existingEvent);
@@ -86,8 +91,12 @@ public class EventServiceImpl implements EventService {
 		Event event = eventRepository.findById(eventId)
 				.orElseThrow(() -> new ResourceNotFoundException("Event not found with id: " + eventId));
 
+		if (quantity == null || quantity <= 0) {
+			throw new IllegalArgumentException("Quantity must be greater than 0");
+		}
+
 		if (event.getLeftCapacity() < quantity) {
-			throw new RuntimeException("Sorry, only " + event.getLeftCapacity() + " tickets remaining.");
+			throw new IllegalArgumentException("Sorry, only " + event.getLeftCapacity() + " tickets remaining.");
 		}
 
 		long newCapacity = event.getLeftCapacity() - quantity;

@@ -1,4 +1,4 @@
-package com.venue_service.utils;
+package com.venue_service.exception;
 
 import java.time.OffsetDateTime;
 import java.util.stream.Collectors;
@@ -16,6 +16,11 @@ import jakarta.validation.ConstraintViolationException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+	@ExceptionHandler(ResourceNotFoundException.class)
+	public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException ex, HttpServletRequest request) {
+		return buildError(HttpStatus.NOT_FOUND, ex.getMessage(), request.getRequestURI());
+	}
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex,
@@ -41,11 +46,6 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex,
 			HttpServletRequest request) {
 		return buildError(HttpStatus.BAD_REQUEST, ex.getMessage(), request.getRequestURI());
-	}
-
-	@ExceptionHandler(RuntimeException.class)
-	public ResponseEntity<ErrorResponse> handleRuntime(RuntimeException ex, HttpServletRequest request) {
-		return buildError(HttpStatus.NOT_FOUND, ex.getMessage(), request.getRequestURI());
 	}
 
 	@ExceptionHandler(Exception.class)

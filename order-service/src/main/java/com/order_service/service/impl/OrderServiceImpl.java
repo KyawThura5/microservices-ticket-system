@@ -1,4 +1,4 @@
-package com.order_service.serviceImpl;
+package com.order_service.service.impl;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
