@@ -1,28 +1,4 @@
 services:
-  # --- SERVICE DISCOVERY ---
-  eureka-server:
-    build: ./eureka-server
-    container_name: eureka-server
-    ports:
-      - "18761:8761"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
-      interval: 10s
-      retries: 5
-      start_period: 10s
-
-  # --- API GATEWAY ---
-  api-gateway:
-    build: ./api-gateway
-    container_name: api-gateway
-    ports:
-      - "18030:8030"
-    depends_on:
-      eureka-server:
-        condition: service_healthy
-    environment:
-      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
-
   # --- MESSAGE BROKER (KAFKA) ---
   kafka-broker:
     image: apache/kafka:latest
@@ -57,134 +33,19 @@ services:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-broker:9092
 
-  # --- DATABASES ---
-  customer-db:
-    image: mysql:8.0
-    container_name: customer-db
-    environment:
-      MYSQL_DATABASE: customer_db
-      MYSQL_ROOT_PASSWORD: root
+  # --- KEYCLOAK AUTHENTICATION ---
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: keycloak
     ports:
-      - "3307:3306"
+      - "8080:8080"
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+    command: start-dev
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-  venue-db:
-    image: mysql:8.0
-    container_name: venue-db
-    environment:
-      MYSQL_DATABASE: venue_db
-      MYSQL_ROOT_PASSWORD: root
-    ports:
-      - "3308:3306"
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-  event-db:
-    image: mysql:8.0
-    container_name: event-db
-    environment:
-      MYSQL_DATABASE: event_db
-      MYSQL_ROOT_PASSWORD: root
-    ports:
-      - "3309:3306"
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-  order-db:
-    image: mysql:8.0
-    container_name: order-db
-    environment:
-      MYSQL_DATABASE: order_db
-      MYSQL_ROOT_PASSWORD: root
-    ports:
-      - "3310:3306"
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-  # --- MICROSERVICES ---
-  customer-service:
-    build: ./customer-service
-    container_name: customer-service
-    depends_on:
-      eureka-server:
-        condition: service_healthy
-      customer-db:
-        condition: service_healthy
-    environment:
-      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
-      - DB_HOST=customer-db
-      - DB_PORT=3306
-      - DB_NAME=customer_db
-      - DB_USER=root
-      - DB_PASSWORD=root
-
-  venue-service:
-    build: ./venue-service
-    container_name: venue-service
-    depends_on:
-      eureka-server:
-        condition: service_healthy
-      venue-db:
-        condition: service_healthy
-    environment:
-      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
-      - DB_HOST=venue-db
-      - DB_PORT=3306
-      - DB_NAME=venue_db
-      - DB_USER=root
-      - DB_PASSWORD=root
-
-  event-service:
-    build: ./event-service
-    container_name: event-service
-    depends_on:
-      eureka-server:
-        condition: service_healthy
-      event-db:
-        condition: service_healthy
-      kafka-broker:
-        condition: service_healthy
-    environment:
-      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
-      - DB_HOST=event-db
-      - DB_PORT=3306
-      - DB_NAME=event_db
-      - DB_USER=root
-      - DB_PASSWORD=root
-      - KAFKA_BOOTSTRAP_SERVERS=kafka-broker:9092
-      - KAFKA_EVENT_GROUP_ID=event-group-docker
-      - KAFKA_TOPIC_PREFIX=docker.
-
-  order-service:
-    build: ./order-service
-    container_name: order-service
-    depends_on:
-      eureka-server:
-        condition: service_healthy
-      order-db:
-        condition: service_healthy
-      kafka-broker:
-        condition: service_healthy
-    environment:
-      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
-      - DB_HOST=order-db
-      - DB_PORT=3306
-      - DB_NAME=order_db
-      - DB_USER=root
-      - DB_PASSWORD=root
-      - KAFKA_BOOTSTRAP_SERVERS=kafka-broker:9092
-      - KAFKA_ORDER_GROUP_ID=order-group-docker
-      - KAFKA_TOPIC_PREFIX=docker.
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
