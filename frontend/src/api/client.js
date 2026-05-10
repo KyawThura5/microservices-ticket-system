@@ -1,4 +1,6 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
+import { env } from "../config/env";
+
+const API_BASE = env.apiBaseUrl;
 
 export function getApiBase() {
   return API_BASE || "(vite proxy)";
