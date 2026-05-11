@@ -9,7 +9,7 @@ A modern **venue-based ticket booking system** with microservices architecture. 
 - **API Gateway:** Routes external requests to microservices
 - **Authentication:** Keycloak for secure user authentication and authorization
 - **Message Broker:** Kafka (`kafka-broker`) for event-driven communication
-- **Database:** MySQL database for data persistence
+- **Databases:** Each microservice has its dedicated MySQL database
 - **Frontend:** React application with modern UI/UX
 - **Microservices:** Customer, Venue, Event, and Order services
 
@@ -40,8 +40,11 @@ graph TB
     KAFKAUI[kafka-ui:8090]
   end
 
-  subgraph Database
-    MYSQL[MySQL:3306]
+  subgraph Databases
+    CDB[customer-db]
+    VDB[venue-db]
+    EDB[event-db]
+    ODB[order-db]
   end
 
   subgraph Microservices
@@ -66,10 +69,10 @@ graph TB
   APIGW --> EVENT
   APIGW --> ORDER
 
-  CUSTOMER --> MYSQL
-  VENUE --> MYSQL
-  EVENT --> MYSQL
-  ORDER --> MYSQL
+  CUSTOMER --> CDB
+  VENUE --> VDB
+  EVENT --> EDB
+  ORDER --> ODB
 
   EVENT --> KAFKA
   ORDER --> KAFKA
