@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export default function AuthPanel({ onLogin, onRegister, loading, error, info }) {
+export default function AuthPanel({ onLogin, onRegister, loading, error, info, onClose }) {
   const [mode, setMode] = useState("login");
   const [loginForm, setLoginForm] = useState({ username: "", password: "" });
   const [registerForm, setRegisterForm] = useState({
@@ -23,10 +23,18 @@ export default function AuthPanel({ onLogin, onRegister, loading, error, info })
   };
 
   return (
-    <main className="auth">
-      <section className="auth__card">
-        <p className="eyebrow">Ticket System</p>
-        <h1>{mode === "login" ? "Sign In" : "Create Customer Account"}</h1>
+    <div className="auth-modal">
+      <div className="auth-modal__overlay" onClick={onClose}></div>
+      <section className="auth-modal__card">
+        <div className="auth-modal__header">
+          <div>
+            <p className="eyebrow">Ticket System</p>
+            <h1>{mode === "login" ? "Sign In" : "Create Customer Account"}</h1>
+          </div>
+          <button className="auth-modal__close" onClick={onClose} aria-label="Close">
+            ✕
+          </button>
+        </div>
         <div className="auth__switch">
           <button type="button" className={`btn btn--tiny ${mode === "login" ? "btn--primary" : ""}`} onClick={() => setMode("login")}>
             Login
@@ -96,6 +104,6 @@ export default function AuthPanel({ onLogin, onRegister, loading, error, info })
         {error ? <p className="error">{error}</p> : null}
         {info ? <p className="note">{info}</p> : null}
       </section>
-    </main>
+    </div>
   );
 }

@@ -207,18 +207,17 @@ function App() {
     );
   }
 
-  // Show auth panel when login is needed
-  if (!isAuthenticated && showAuth) {
-    return (
-      <AuthPanel
-        onLogin={handleLogin}
-        onRegister={handleRegister}
-        loading={authLoading}
-        error={authError}
-        info={authInfo}
-      />
-    );
-  }
+  // Show auth panel as modal overlay when login is needed
+  const authModal = !isAuthenticated && showAuth ? (
+    <AuthPanel
+      onLogin={handleLogin}
+      onRegister={handleRegister}
+      loading={authLoading}
+      error={authError}
+      info={authInfo}
+      onClose={handleAuthClose}
+    />
+  ) : null;
 
   const handleCustomerChange = handleFormChange(setCustomerForm);
   const handleEventChange = handleFormChange(setEventForm);
@@ -381,6 +380,8 @@ function App() {
         onConfirm={confirmDelete}
         onCancel={closeConfirm}
       />
+      
+      {authModal}
     </div>
   );
 }
