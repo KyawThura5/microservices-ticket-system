@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
+import PublicHeader from "./components/PublicHeader";
 import Modal from "./components/Modal";
 import ConfirmModal from "./components/ConfirmModal";
 import AuthPanel from "./components/AuthPanel";
@@ -13,6 +14,7 @@ import OrderForm from "./features/orders/OrderForm";
 import Orders from "./features/orders/OrdersPage";
 import VenueForm from "./features/venues/VenueForm";
 import Venues from "./features/venues/VenuesPage";
+import PublicBrowsePage from "./features/public/PublicBrowsePage";
 import sections from "./config/sections";
 import useTicketingState from "./hooks/useTicketingState";
 import { clearAuthToken, getAuthToken, setAuthToken } from "./api/client";
@@ -28,6 +30,8 @@ function App() {
   const [authError, setAuthError] = useState("");
   const [authInfo, setAuthInfo] = useState("");
   const [token, setToken] = useState("");
+  const [showAuth, setShowAuth] = useState(false);
+  const [pendingOrderEvent, setPendingOrderEvent] = useState(null);
   const pageSize = 6;
 
   const {
@@ -111,6 +115,20 @@ function App() {
     }
   }, [active, isAuthenticated, visibleSections]);
 
+  useEffect(() => {
+    if (isAuthenticated && pendingOrderEvent) {
+      // User just logged in and there's a pending order
+      openModal("order", "create");
+      setOrderForm({
+        eventId: pendingOrderEvent.id,
+        numberOfTickets: 1,
+        customerId: "",
+      });
+      setPendingOrderEvent(null);
+      setShowAuth(false);
+    }
+  }, [isAuthenticated, pendingOrderEvent, openModal, setOrderForm]);
+
   const handleLogin = async (form) => {
     setAuthLoading(true);
     setAuthError("");
@@ -152,9 +170,45 @@ function App() {
     setToken("");
     setAuthError("");
     setAuthInfo("Signed out.");
+    setShowAuth(false);
+    setPendingOrderEvent(null);
   };
 
-  if (!isAuthenticated) {
+  const handlePublicOrderClick = (event) => {
+    setPendingOrderEvent(event);
+    setShowAuth(true);
+  };
+
+  const handleLoginClick = () => {
+    setShowAuth(true);
+  };
+
+  const handleAuthClose = () => {
+    if (!isAuthenticated) {
+      setShowAuth(false);
+      setPendingOrderEvent(null);
+    }
+  };
+
+  // Show public browsing page for unauthenticated users
+  if (!isAuthenticated && !showAuth) {
+    return (
+      <div className="public-browse" data-theme={theme}>
+        <PublicHeader onLoginClick={handleLoginClick} />
+        <PublicBrowsePage
+          events={events}
+          venues={venues}
+          venuesById={venueMap}
+          loading={eventsLoading || venuesLoading}
+          error={eventsError || venuesError}
+          onOrderClick={handlePublicOrderClick}
+        />
+      </div>
+    );
+  }
+
+  // Show auth panel when login is needed
+  if (!isAuthenticated && showAuth) {
     return (
       <AuthPanel
         onLogin={handleLogin}
