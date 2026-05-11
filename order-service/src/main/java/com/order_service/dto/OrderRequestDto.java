@@ -9,7 +9,6 @@ public class OrderRequestDto {
 	@NotNull
 	@Positive
 	private Long quantity;
-	@NotNull
 	private Long customerId;
 	@NotNull
 	private Long eventId;

@@ -7,7 +7,6 @@ export default function useOrders() {
   const [ordersError, setOrdersError] = useState("");
   const [orderPage, setOrderPage] = useState(1);
   const [orderForm, setOrderForm] = useState({
-    customerId: "",
     eventId: "",
     quantity: "",
   });
@@ -30,7 +29,7 @@ export default function useOrders() {
   }, []);
 
   const resetOrderForm = useCallback(() => {
-    setOrderForm({ customerId: "", eventId: "", quantity: "" });
+    setOrderForm({ eventId: "", quantity: "" });
   }, []);
 
   return {

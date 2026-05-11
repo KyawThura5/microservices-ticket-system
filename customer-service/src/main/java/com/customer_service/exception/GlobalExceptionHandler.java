@@ -49,6 +49,23 @@ public class GlobalExceptionHandler {
 		return buildError(HttpStatus.BAD_REQUEST, ex.getMessage(), request.getRequestURI());
 	}
 
+	@ExceptionHandler(KeycloakProvisioningException.class)
+	public ResponseEntity<ErrorResponse> handleKeycloakProvisioning(KeycloakProvisioningException ex,
+			HttpServletRequest request) {
+		return buildError(HttpStatus.BAD_GATEWAY, ex.getMessage(), request.getRequestURI());
+	}
+
+	@ExceptionHandler(ConflictException.class)
+	public ResponseEntity<ErrorResponse> handleConflict(ConflictException ex, HttpServletRequest request) {
+		return buildError(HttpStatus.CONFLICT, ex.getMessage(), request.getRequestURI());
+	}
+
+	@ExceptionHandler(CustomerRegistrationException.class)
+	public ResponseEntity<ErrorResponse> handleRegistrationFailure(CustomerRegistrationException ex,
+			HttpServletRequest request) {
+		return buildError(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage(), request.getRequestURI());
+	}
+
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<ErrorResponse> handleGenericException(Exception ex, HttpServletRequest request) {
 		return buildError(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error", request.getRequestURI());

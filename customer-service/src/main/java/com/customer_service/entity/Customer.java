@@ -34,4 +34,7 @@ public class Customer {
 
 	@Column(nullable = false)
 	private String phoneNumber;
+
+	@Column(unique = true)
+	private String keycloakUserId;
 }

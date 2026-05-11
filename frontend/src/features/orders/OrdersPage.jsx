@@ -10,6 +10,7 @@ export default function Orders({
   onRefresh,
   customersById,
   eventsById,
+  showCustomer = true,
   page,
   pageSize,
   onPageChange,
@@ -42,7 +43,7 @@ export default function Orders({
             <div className="table table--orders">
               <div className="table__row table__head">
                 <span>Order</span>
-                <span>Customer</span>
+                {showCustomer ? <span>Customer</span> : null}
                 <span>Event</span>
                 <span>Quantity</span>
                 <span>Status</span>
@@ -52,7 +53,7 @@ export default function Orders({
               {pageItems.map((order) => (
                 <div key={order.id} className="table__row">
                   <span>#{order.id}</span>
-                  <span>{customersById?.get(order.customerId)?.name || `#${order.customerId}`}</span>
+                  {showCustomer ? <span>{customersById?.get(order.customerId)?.name || `#${order.customerId}`}</span> : null}
                   <span>{eventsById?.get(order.eventId)?.name || `#${order.eventId}`}</span>
                   <span>{order.quantity}</span>
                   <span className={`status status--${order.orderStatus?.toLowerCase()}`}>

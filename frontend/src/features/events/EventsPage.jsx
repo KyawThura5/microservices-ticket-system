@@ -2,7 +2,7 @@ import Pagination from "../../components/Pagination";
 import { paginate, clampPage } from "../../utils/pagination";
 import { formatMoney } from "../../utils/format";
 
-export default function Events({ events, venuesById, loading, error, onAdd, onEdit, onDelete, page, pageSize, onPageChange }) {
+export default function Events({ events, venuesById, loading, error, onAdd, onEdit, onDelete, canManage = true, page, pageSize, onPageChange }) {
   const currentPage = clampPage(page, events.length, pageSize);
   const pageItems = paginate(events, currentPage, pageSize);
 
@@ -11,9 +11,11 @@ export default function Events({ events, venuesById, loading, error, onAdd, onEd
       <div className="data-card">
         <div className="data-card__header">
           <h3>Events</h3>
-          <button className="btn btn--primary btn--tiny" onClick={onAdd}>
-            Add event
-          </button>
+          {canManage ? (
+            <button className="btn btn--primary btn--tiny" onClick={onAdd}>
+              Add event
+            </button>
+          ) : null}
         </div>
         {loading ? (
           <p>Loading events...</p>
@@ -29,7 +31,7 @@ export default function Events({ events, venuesById, loading, error, onAdd, onEd
                 <span>Venue</span>
                 <span>Capacity</span>
                 <span>Price</span>
-                <span>Actions</span>
+                {canManage ? <span>Actions</span> : null}
               </div>
               {pageItems.map((event) => (
                 <div key={event.id} className="table__row">
@@ -39,14 +41,16 @@ export default function Events({ events, venuesById, loading, error, onAdd, onEd
                     {event.leftCapacity ?? "—"}/{event.totalCapacity ?? "—"}
                   </span>
                   <span>{formatMoney(event.ticketPrice)}</span>
-                  <span className="table__actions">
-                    <button className="btn btn--tiny" type="button" onClick={() => onEdit(event)}>
-                      Edit
-                    </button>
-                    <button className="btn btn--tiny btn--ghost" type="button" onClick={() => onDelete(event)}>
-                      Delete
-                    </button>
-                  </span>
+                  {canManage ? (
+                    <span className="table__actions">
+                      <button className="btn btn--tiny" type="button" onClick={() => onEdit(event)}>
+                        Edit
+                      </button>
+                      <button className="btn btn--tiny btn--ghost" type="button" onClick={() => onDelete(event)}>
+                        Delete
+                      </button>
+                    </span>
+                  ) : null}
                 </div>
               ))}
             </div>

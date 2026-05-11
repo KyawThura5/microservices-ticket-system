@@ -12,6 +12,7 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: http://localhost:8080/realms/ticketing-security-realm
+          audiences: account
 
   cloud:
     gateway:

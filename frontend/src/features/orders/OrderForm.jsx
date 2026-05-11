@@ -1,17 +1,6 @@
-export default function OrderForm({ form, customers, events, onChange, onSubmit, saving, onCancel }) {
+export default function OrderForm({ form, events, onChange, onSubmit, saving, onCancel }) {
   return (
     <form onSubmit={onSubmit} className="form-grid">
-      <label>
-        <span>Customer</span>
-        <select name="customerId" value={form.customerId} onChange={onChange} required>
-          <option value="">Select customer</option>
-          {customers.map((customer) => (
-            <option key={customer.id} value={customer.id}>
-              {customer.name} (#{customer.id})
-            </option>
-          ))}
-        </select>
-      </label>
       <label>
         <span>Event</span>
         <select name="eventId" value={form.eventId} onChange={onChange} required>

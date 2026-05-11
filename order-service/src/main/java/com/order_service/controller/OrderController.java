@@ -4,12 +4,15 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 import com.order_service.dto.OrderRequestDto;
 import com.order_service.dto.OrderResponseDto;
@@ -34,19 +37,24 @@ public class OrderController {
 	@ApiResponses(value = { @ApiResponse(responseCode = "201", description = "Order created successfully"),
 			@ApiResponse(responseCode = "400", description = "Invalid input or sold out") })
 	@PostMapping
-	public ResponseEntity<OrderResponseDto> placeOrder(@Valid @RequestBody OrderRequestDto orderRequestDto) {
-		OrderResponseDto savedOrder = orderService.placeOrder(orderRequestDto);
+	public ResponseEntity<OrderResponseDto> placeOrder(@Valid @RequestBody OrderRequestDto orderRequestDto,
+			@AuthenticationPrincipal Jwt jwt,
+			@RequestHeader("Authorization") String authorizationHeader) {
+		OrderResponseDto savedOrder = orderService.placeOrder(orderRequestDto, jwt, authorizationHeader);
 		return new ResponseEntity<>(savedOrder, HttpStatus.CREATED);
 	}
 
 	@Operation(summary = "Get order details", description = "Use this to poll for status changes (PENDING -> CONFIRMED/REJECTED)")
 	@GetMapping("/{id}")
-	public ResponseEntity<OrderResponseDto> getOrderById(@PathVariable Long id) {
-		return ResponseEntity.ok(orderService.getOrderById(id));
+	public ResponseEntity<OrderResponseDto> getOrderById(@PathVariable Long id,
+			@AuthenticationPrincipal Jwt jwt,
+			@RequestHeader("Authorization") String authorizationHeader) {
+		return ResponseEntity.ok(orderService.getOrderById(id, jwt, authorizationHeader));
 	}
 
 	@GetMapping
-	public ResponseEntity<List<OrderResponseDto>> getAllOrders() {
-		return ResponseEntity.ok(orderService.getAllOrders());
+	public ResponseEntity<List<OrderResponseDto>> getAllOrders(@AuthenticationPrincipal Jwt jwt,
+			@RequestHeader("Authorization") String authorizationHeader) {
+		return ResponseEntity.ok(orderService.getAllOrders(jwt, authorizationHeader));
 	}
 }

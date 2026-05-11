@@ -15,3 +15,11 @@ export function updateCustomer(id, payload) {
 export function deleteCustomer(id) {
   return apiSend(`/api/customers/${id}`, "DELETE");
 }
+
+export function getCurrentCustomer() {
+  return apiGet("/api/customers/me");
+}
+
+export function registerCustomer(payload) {
+  return apiSend("/api/customers/register", "POST", payload);
+}

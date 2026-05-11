@@ -337,10 +337,9 @@ export default function useTicketingState() {
     [loadOrders]
   );
 
-  const findLatestOrder = useCallback((list, customerId, eventId) => {
+  const findLatestOrder = useCallback((list, eventId) => {
     const filtered = list.filter(
       (order) =>
-        (customerId ? Number(order.customerId) === Number(customerId) : true) &&
         (eventId ? Number(order.eventId) === Number(eventId) : true)
     );
     if (filtered.length === 0) return null;
@@ -358,7 +357,6 @@ export default function useTicketingState() {
       setActionMessage("");
       const requestedQty = numberOrNull(orderForm.quantity);
       const payload = {
-        customerId: numberOrNull(orderForm.customerId),
         eventId: numberOrNull(orderForm.eventId),
         quantity: requestedQty,
       };
@@ -375,7 +373,7 @@ export default function useTicketingState() {
       } catch (err) {
         setActionMessage(err?.message || "Unable to place order.");
         const latestOrders = await loadOrders();
-        const fallback = findLatestOrder(latestOrders, payload.customerId, payload.eventId);
+        const fallback = findLatestOrder(latestOrders, payload.eventId);
         if (fallback?.id && fallback.orderStatus === "PENDING") {
           startOrderPolling(fallback.id);
         }

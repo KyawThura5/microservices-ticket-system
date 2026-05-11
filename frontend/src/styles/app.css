@@ -697,6 +697,34 @@ body {
   margin-top: 16px;
 }
 
+.auth {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: radial-gradient(circle at top, #1f2336 0%, #0d0f14 60%);
+}
+
+.auth__card {
+  width: min(520px, 100%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: 24px;
+}
+
+.auth__card h1 {
+  margin: 8px 0 18px;
+  font-family: "Fraunces", "Times New Roman", serif;
+}
+
+.auth__switch {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
 @media (max-width: 1024px) {
   .panel-card--wide {
     grid-column: span 1;

@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
 import Modal from "./components/Modal";
 import ConfirmModal from "./components/ConfirmModal";
+import AuthPanel from "./components/AuthPanel";
 import CustomerForm from "./features/customers/CustomerForm";
 import Customers from "./features/customers/CustomersPage";
 import Dashboard from "./features/dashboard/DashboardPage";
@@ -14,11 +15,19 @@ import VenueForm from "./features/venues/VenueForm";
 import Venues from "./features/venues/VenuesPage";
 import sections from "./config/sections";
 import useTicketingState from "./hooks/useTicketingState";
+import { clearAuthToken, getAuthToken, setAuthToken } from "./api/client";
+import { loginWithPassword } from "./api/auth";
+import { registerCustomer } from "./api/customers";
+import { extractRoles, hasRole, parseJwtPayload } from "./utils/auth";
 
 function App() {
   const [active, setActive] = useState("dashboard");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [theme, setTheme] = useState("dark");
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const [authInfo, setAuthInfo] = useState("");
+  const [token, setToken] = useState("");
   const pageSize = 6;
 
   const {
@@ -75,6 +84,88 @@ function App() {
     handleOrderSubmit,
   } = useTicketingState();
 
+  useEffect(() => {
+    setToken(getAuthToken());
+  }, []);
+
+  const tokenPayload = useMemo(() => parseJwtPayload(token), [token]);
+  const roles = useMemo(() => extractRoles(tokenPayload), [tokenPayload]);
+  const isAdmin = hasRole(roles, "ADMIN");
+  const isCustomer = hasRole(roles, "CUSTOMER");
+  const resolvedRole = isAdmin ? "ADMIN" : isCustomer ? "CUSTOMER" : "";
+  const isAuthenticated = Boolean(token && resolvedRole);
+  const username = tokenPayload?.preferred_username || tokenPayload?.email || tokenPayload?.sub || "";
+
+  const visibleSections = useMemo(() => {
+    if (isAdmin) return sections;
+    if (isCustomer) {
+      return sections.filter((section) => section.id !== "customers");
+    }
+    return [];
+  }, [isAdmin, isCustomer]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    if (!visibleSections.some((section) => section.id === active)) {
+      setActive("dashboard");
+    }
+  }, [active, isAuthenticated, visibleSections]);
+
+  const handleLogin = async (form) => {
+    setAuthLoading(true);
+    setAuthError("");
+    setAuthInfo("");
+    try {
+      const result = await loginWithPassword(form);
+      const accessToken = result.access_token || "";
+      const payload = parseJwtPayload(accessToken);
+      const payloadRoles = extractRoles(payload);
+      if (!hasRole(payloadRoles, "ADMIN") && !hasRole(payloadRoles, "CUSTOMER")) {
+        throw new Error("Login succeeded, but token has no ADMIN or CUSTOMER role.");
+      }
+      setAuthToken(accessToken);
+      setToken(accessToken);
+      setAuthInfo("");
+    } catch (error) {
+      setAuthError(error?.message || "Unable to login.");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleRegister = async (form) => {
+    setAuthLoading(true);
+    setAuthError("");
+    setAuthInfo("");
+    try {
+      await registerCustomer(form);
+      setAuthInfo("Registration successful. You can now sign in.");
+    } catch (error) {
+      setAuthError(error?.message || "Unable to register.");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    clearAuthToken();
+    setToken("");
+    setAuthError("");
+    setAuthInfo("Signed out.");
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <AuthPanel
+        onLogin={handleLogin}
+        onRegister={handleRegister}
+        loading={authLoading}
+        error={authError}
+        info={authInfo}
+      />
+    );
+  }
+
   const handleCustomerChange = handleFormChange(setCustomerForm);
   const handleEventChange = handleFormChange(setEventForm);
   const handleVenueChange = handleFormChange(setVenueForm);
@@ -83,7 +174,7 @@ function App() {
   return (
     <div className={`app ${sidebarCollapsed ? "is-collapsed" : ""}`} data-theme={theme}>
       <Sidebar
-        sections={sections}
+        sections={visibleSections}
         active={active}
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed((prev) => !prev)}
@@ -92,15 +183,18 @@ function App() {
 
       <main className="content">
         <Header
-          title={sections.find((section) => section.id === active)?.label}
+          title={visibleSections.find((section) => section.id === active)?.label}
           saving={saving}
           actionMessage={actionMessage}
           theme={theme}
           onToggleTheme={() => setTheme((prev) => (prev === "dark" ? "light" : "dark"))}
           onToggleSidebar={() => setSidebarCollapsed((prev) => !prev)}
+          role={resolvedRole}
+          username={username}
+          onLogout={handleLogout}
         />
 
-        {active === "dashboard" ? (
+        {active === "dashboard" && isAuthenticated ? (
           <Dashboard
             stats={stats}
             ordersLoading={ordersLoading}
@@ -113,7 +207,7 @@ function App() {
           />
         ) : null}
 
-        {active === "customers" ? (
+        {active === "customers" && isAdmin ? (
           <Customers
             customers={customers}
             loading={customersLoading}
@@ -136,6 +230,7 @@ function App() {
             onAdd={() => openModal("event", "create")}
             onEdit={(event) => openModal("event", "edit", event)}
             onDelete={(event) => openConfirm("event", event.id, event.name)}
+            canManage={isAdmin}
             page={eventPage}
             pageSize={pageSize}
             onPageChange={setEventPage}
@@ -150,6 +245,7 @@ function App() {
             onAdd={() => openModal("venue", "create")}
             onEdit={(venue) => openModal("venue", "edit", venue)}
             onDelete={(venue) => openConfirm("venue", venue.id, venue.name)}
+            canManage={isAdmin}
             page={venuePage}
             pageSize={pageSize}
             onPageChange={setVenuePage}
@@ -165,6 +261,7 @@ function App() {
             onRefresh={loadOrders}
             customersById={customerMap}
             eventsById={eventMap}
+            showCustomer={isAdmin}
             page={orderPage}
             pageSize={pageSize}
             onPageChange={setOrderPage}
@@ -172,8 +269,12 @@ function App() {
         ) : null}
       </main>
 
-      <Modal open={modalOpen} title={`${modalMode === "edit" ? "Update" : "Add"} ${modalType}`} onClose={closeModal}>
-        {modalType === "customer" ? (
+      <Modal
+        open={modalOpen && (isAdmin || modalType === "order")}
+        title={`${modalMode === "edit" ? "Update" : "Add"} ${modalType}`}
+        onClose={closeModal}
+      >
+        {modalType === "customer" && isAdmin ? (
           <CustomerForm
             form={customerForm}
             onChange={handleCustomerChange}
@@ -184,7 +285,7 @@ function App() {
           />
         ) : null}
 
-        {modalType === "event" ? (
+        {modalType === "event" && isAdmin ? (
           <EventForm
             form={eventForm}
             venues={venues}
@@ -196,7 +297,7 @@ function App() {
           />
         ) : null}
 
-        {modalType === "venue" ? (
+        {modalType === "venue" && isAdmin ? (
           <VenueForm
             form={venueForm}
             onChange={handleVenueChange}
@@ -210,7 +311,6 @@ function App() {
         {modalType === "order" ? (
           <OrderForm
             form={orderForm}
-            customers={customers}
             events={events}
             onChange={handleOrderChange}
             onSubmit={handleOrderSubmit}
@@ -221,7 +321,7 @@ function App() {
       </Modal>
 
       <ConfirmModal
-        open={confirmOpen}
+        open={confirmOpen && isAdmin}
         title="Confirm delete"
         message={`Delete ${confirmTarget.type} ${confirmTarget.label || `#${confirmTarget.id}`}?`}
         onConfirm={confirmDelete}
