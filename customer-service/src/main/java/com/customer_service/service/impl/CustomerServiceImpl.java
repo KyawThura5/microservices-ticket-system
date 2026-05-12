@@ -61,10 +61,6 @@ public class CustomerServiceImpl implements CustomerService {
 				request.getPassword(),
 				request.getEmail(),
 				request.getName());
-
-		// Clear any required actions that might have been set automatically by Keycloak
-		keycloakUserProvisioningService.clearRequiredActions(keycloakUserId);
-
 		Customer customer = new Customer();
 		customer.setName(request.getName());
 		customer.setEmail(request.getEmail());

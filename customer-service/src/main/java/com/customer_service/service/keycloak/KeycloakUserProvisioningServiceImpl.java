@@ -93,61 +93,6 @@ public class KeycloakUserProvisioningServiceImpl implements KeycloakUserProvisio
     }
 
     @Override
-    public void clearRequiredActions(String userId) {
-        String accessToken = getAdminAccessToken();
-        try {
-            // First get the current required actions
-            HttpRequest getActionsRequest = HttpRequest.newBuilder()
-                    .uri(URI.create(properties.getServerUrl() + "/admin/realms/" + properties.getRealm() + "/users/" + userId))
-                    .header("Authorization", "Bearer " + accessToken)
-                    .GET()
-                    .build();
-
-            HttpResponse<String> getResponse = httpClient.send(getActionsRequest, HttpResponse.BodyHandlers.ofString());
-            if (getResponse.statusCode() != 200) {
-                System.out.println("WARNING: Failed to get user info for clearing actions. Status: " + getResponse.statusCode());
-                return;
-            }
-
-            // Parse the user info to see if there are any required actions
-            Map<String, Object> userInfo = objectMapper.readValue(getResponse.body(), new TypeReference<>() {});
-            List<String> requiredActions = (List<String>) userInfo.get("requiredActions");
-            
-            if (requiredActions == null || requiredActions.isEmpty()) {
-                System.out.println("INFO: No required actions to clear for user " + userId);
-                return;
-            }
-
-            System.out.println("INFO: Found required actions to clear: " + requiredActions);
-
-            // Update the user with empty required actions
-            Map<String, Object> updatePayload = Map.of(
-                "requiredActions", List.of()
-            );
-            
-            String body = objectMapper.writeValueAsString(updatePayload);
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(properties.getServerUrl() + "/admin/realms/" + properties.getRealm() + "/users/" + userId))
-                    .header("Content-Type", "application/json")
-                    .header("Authorization", "Bearer " + accessToken)
-                    .PUT(HttpRequest.BodyPublishers.ofString(body))
-                    .build();
-
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() != 204) {
-                System.out.println("WARNING: Failed to clear required actions for user " + userId + ". Status: " + response.statusCode() + ", response: " + response.body());
-            } else {
-                System.out.println("SUCCESS: Cleared required actions for user " + userId);
-            }
-        } catch (InterruptedException ex) {
-            Thread.currentThread().interrupt();
-            throw new KeycloakProvisioningException("Interrupted while clearing required actions", ex);
-        } catch (IOException ex) {
-            throw new KeycloakProvisioningException("Failed to clear required actions", ex);
-        }
-    }
-
-    @Override
     public void deleteUser(String userId) {
         String accessToken = getAdminAccessToken();
         HttpRequest request = HttpRequest.newBuilder()
