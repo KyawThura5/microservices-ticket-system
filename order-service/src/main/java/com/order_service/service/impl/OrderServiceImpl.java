@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.kafka.core.KafkaTemplate;
@@ -42,8 +43,8 @@ public class OrderServiceImpl implements OrderService {
 	private final String orderPlacedTopic;
 
 	public OrderServiceImpl(OrderRepository orderRepository, OrderMapper orderMapper,
-			KafkaTemplate<String, OrderPlacedEvent> kafkaTemplate, EventClient eventClient, CustomerClient customerClient,
-			@Value("${kafka.topic.order-placed}") String orderPlacedTopic) {
+							KafkaTemplate<String, OrderPlacedEvent> kafkaTemplate, EventClient eventClient, CustomerClient customerClient,
+							@Value("${kafka.topic.order-placed}") String orderPlacedTopic) {
 		this.orderRepository = orderRepository;
 		this.orderMapper = orderMapper;
 		this.kafkaTemplate = kafkaTemplate;
@@ -55,14 +56,17 @@ public class OrderServiceImpl implements OrderService {
 	@Override
 	@Transactional // Ensures order is saved before Kafka message is considered part of the flow
 	public OrderResponseDto placeOrder(OrderRequestDto orderDto, Jwt jwt, String authorizationHeader) {
-		Long resolvedCustomerId = resolveCustomerId(orderDto, jwt, authorizationHeader);
-		orderDto.setCustomerId(resolvedCustomerId);
 
-		Order order = orderMapper.mapToOrder(orderDto);
-		order.setPlacedAt(LocalDateTime.now());
-		order.setStatus(OrderStatus.PENDING);
+		Long resolvedCustomerId = resolveCustomerId(orderDto, jwt, authorizationHeader);
 
 		EventResponseDto eventDetails = eventClient.getEventById(orderDto.getEventId());
+
+		Order order = new Order();
+		order.setCustomerId(resolvedCustomerId);
+		order.setQuantity(orderDto.getQuantity());
+		order.setPlacedAt(LocalDateTime.now());
+		order.setStatus(OrderStatus.PENDING);
+		order.setEventId(eventDetails.getId());
 
 		BigDecimal total = eventDetails.getTicketPrice().multiply(BigDecimal.valueOf(order.getQuantity()));
 		order.setTotal(total);
@@ -86,19 +90,6 @@ public class OrderServiceImpl implements OrderService {
 		return customer.getId();
 	}
 
-	@SuppressWarnings("unchecked")
-	private boolean isAdmin(Jwt jwt) {
-		Map<String, Object> realmAccess = jwt.getClaimAsMap("realm_access");
-		if (realmAccess == null) {
-			return false;
-		}
-		Object rolesClaim = realmAccess.get("roles");
-		if (!(rolesClaim instanceof Collection<?> roles)) {
-			return false;
-		}
-		return roles.stream().map(Object::toString).anyMatch("ADMIN"::equals);
-	}
-
 	@Override
 	public OrderResponseDto getOrderById(Long id, Jwt jwt, String authorizationHeader) {
 		Order order = orderRepository.findById(id)
@@ -114,14 +105,25 @@ public class OrderServiceImpl implements OrderService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public List<OrderResponseDto> getAllOrders(Jwt jwt, String authorizationHeader) {
 		if (isAdmin(jwt)) {
-			return orderRepository.findAll().stream().map(orderMapper::mapToResponseDto).collect(Collectors.toList());
+			return orderRepository.findAll().stream()
+					.map(orderMapper::mapToResponseDto)
+					.toList();
 		}
 		Long currentCustomerId = customerClient.getCurrentCustomer(authorizationHeader).getId();
-		return orderRepository.findAll().stream()
-				.filter(order -> currentCustomerId.equals(order.getCustomerId()))
+
+		return orderRepository.findByCustomerId(currentCustomerId).stream()
 				.map(orderMapper::mapToResponseDto)
-				.collect(Collectors.toList());
+				.toList();
+	}
+
+	private boolean isAdmin(Jwt jwt) {
+		return Optional.ofNullable(jwt.getClaimAsMap("realm_access"))
+				.map(realm -> realm.get("roles"))
+				.filter(roles -> roles instanceof Collection)
+				.map(roles -> ((Collection<?>) roles).contains("ADMIN"))
+				.orElse(false);
 	}
 }
